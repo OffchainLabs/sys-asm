@@ -7,7 +7,7 @@ import "../src/Contract.sol";
 
 address constant addr = 0x000000000000000000000000000000000000aaaa;
 address constant sysaddr = 0xffffFFFfFFffffffffffffffFfFFFfffFFFfFFfE;
-uint256 constant buflen = 8191;
+uint256 constant buflen = 393168;
 bytes32 constant hash    = hex"88e96d4537bea4d9c05d12549907b32561d3bf31f45aae734cdc119f13406cb6";
 
 function lastBlockNumber() view returns (bytes32) {
