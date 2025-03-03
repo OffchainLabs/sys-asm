@@ -14,7 +14,9 @@
 ;; ----------------------------------------------------------------------------
 
 ;; BUFLEN returns the HISTORY_BUFFER_LENGTH as defined in the EIP.
-#define BUFLEN = 8191
+;; was 8191, which is 8191*12 = 98292 seconds
+;; 98292 seconds is 98292 * 4 = 393168 L2 blocks
+#define BUFLEN = 393168 
 
 ;; SYSADDR is the address which calls the contract to submit a new block hash.
 #define SYSADDR = .address(0xfffffffffffffffffffffffffffffffffffffffe)
