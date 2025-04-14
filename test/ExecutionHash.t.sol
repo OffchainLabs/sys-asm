@@ -7,11 +7,26 @@ import "../src/Contract.sol";
 
 address constant addr = 0x000000000000000000000000000000000000aaaa;
 address constant sysaddr = 0xffffFFFfFFffffffffffffffFfFFFfffFFFfFFfE;
-uint256 constant buflen = 8191;
+uint256 constant buflen = 393168;
 bytes32 constant hash    = hex"88e96d4537bea4d9c05d12549907b32561d3bf31f45aae734cdc119f13406cb6";
 
+contract ArbSys {
+    uint256 public arbBlockNumber;
+    function _roll(uint256 number) external {
+        arbBlockNumber = number;
+    }
+}
+
+function roll(uint256 number) {
+  ArbSys(address(100))._roll(number);
+}
+
+function blockNumber() view returns (uint256) {
+  return ArbSys(address(100)).arbBlockNumber();
+}
+
 function lastBlockNumber() view returns (bytes32) {
-  return bytes32(uint256(block.number)-1);
+  return bytes32(uint256(blockNumber())-1);
 }
 
 function hash_idx() view returns (bytes32) {
@@ -21,6 +36,8 @@ function hash_idx() view returns (bytes32) {
 contract ContractTest is Test {
     function setUp() public {
         vm.etch(addr, Geas.compile("src/execution_hash/main.eas"));
+        vm.etch(address(100), address(new ArbSys()).code);
+        roll(block.number);
     }
 
     // testRead verifies the contract returns the expected execution hash.
@@ -56,14 +73,14 @@ contract ContractTest is Test {
 
     function testReadBadBlockNumbers() public {
         // Set reasonable block number.
-        vm.roll(21053500);
-        uint256 number = block.number-1;
+        roll(21053500);
+        uint256 number = blockNumber()-1;
 
         // Store hash at expected indexes.
         vm.store(addr, hash_idx(), hash);
 
         // Request current block.
-        (bool ret, bytes memory data) = addr.call(bytes.concat(bytes32(block.number)));
+        (bool ret, bytes memory data) = addr.call(bytes.concat(bytes32(blockNumber())));
         assertFalse(ret);
         assertEq(data, hex"");
 
@@ -101,7 +118,7 @@ contract ContractTest is Test {
     // values.
     function testRingBuffers() public {
         // Set reasonable block number.
-        vm.roll(21053500);
+        roll(21053500);
 
         for (uint256 i = 0; i < 10000; i += 1) {
             bytes32 pbbr = bytes32(i*1337);
@@ -119,16 +136,16 @@ contract ContractTest is Test {
             assertEq(data, bytes.concat(pbbr));
 
             // Skip forward 1 block.
-            vm.roll(block.number+1);
+            roll(blockNumber()+1);
         }
     }
 
 
     // testHistoricalReads verifies that it is possible to read all previously
     // saved values in the beacon hash contract.
-    function testHistoricalReads() public {
+    function testHistoricalReads() public noGasMetering {
         uint256 start = 1;
-        vm.roll(start);
+        roll(start);
 
         // Saturate storage with fake hashs.
         for (uint256 i = 0; i < buflen; i += 1) {
@@ -139,7 +156,7 @@ contract ContractTest is Test {
             assertEq(data, hex"");
             if (i+1 < buflen) {
               // Only bump block number if not last iteration.
-              vm.roll(block.number+1);
+              roll(blockNumber()+1);
             }
         }
 
