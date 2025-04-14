@@ -21,6 +21,47 @@
 ;; SYSADDR is the address which calls the contract to submit a new block hash.
 #define SYSADDR = .address(0xfffffffffffffffffffffffffffffffffffffffe)
 
+;; call ArbSys::arbBlockNumber()
+;; takes 0 stack arguments
+;; pushes the result onto the stack
+;; we can use memory however we like, because the "set" path doesn't use memory
+#define %arb_block_num() {
+  ;; stack input to staticcall
+  ;; gas
+  ;; address
+  ;; argsOffset: byte offset in the memory in bytes, the calldata of the sub context.
+  ;; argsSize: byte size to copy (size of the calldata).
+  ;; retOffset: byte offset in the memory in bytes, where to store the return data of the sub context.
+  ;; retSize: byte size to copy (size of the return data).
+
+  ;; retSize
+  push 32         ;; [retSize]
+  ;; retOffset
+  push0           ;; [retOffset, retSize]
+  ;; argsSize
+  push 4          ;; [argsSize, retOffset, retSize]
+  ;; argsOffset, we'll just overwrite memory at 0
+  push 28         ;; [argsOffset, argsSize, retOffset, retSize]
+  ;; address (ArbSys)
+  push 100        ;; [ArbSys, argsOffset, argsSize, retOffset, retSize]
+  ;; gas, this is more than enough
+  push 5000       ;; [gas, ArbSys, argsOffset, argsSize, retOffset, retSize]
+
+  ;; store the function selector
+  push 0xa3b1b31d ;; [selector, gas, ArbSys, argsOffset, argsSize, retOffset, retSize]
+  push0           ;; [0, selector, gas, ArbSys, argsOffset, argsSize, retOffset, retSize]
+  mstore          ;; [gas, ArbSys, argsOffset, argsSize, retOffset, retSize]
+
+  ;; perform the call
+  staticcall      ;; [success]
+  iszero          ;; [!success]
+  jumpi @throw    ;; []
+
+  ;; push the result onto the stack
+  push0           ;; [0]
+  mload           ;; [arbBlockNumber]
+}
+
 ;; ----------------------------------------------------------------------------
 ;; MACROS END -----------------------------------------------------------------
 ;; ----------------------------------------------------------------------------
@@ -48,7 +89,7 @@
   push 0            ;; [0]
   calldataload      ;; [input]
   push 1            ;; [1, input]
-  number            ;; [number, 1, input]
+  %arb_block_num    ;; [number, 1, input]
   sub               ;; [number-1, input]              
   dup2              ;; [input, number-1, input]
   gt                ;; [input > number-1, input]
@@ -59,7 +100,7 @@
   ;; there will be no overflow during the subtraction of number - input.
   push BUFLEN       ;; [buflen, input]
   dup2              ;; [input, buflen, input]
-  number            ;; [number, input, buflen, input]
+  %arb_block_num    ;; [number, input, buflen, input]
   sub               ;; [number - input, buflen, input]
   gt                ;; [number - input > buflen, input]
   jumpi @throw      ;; [input]
@@ -88,7 +129,7 @@ submit:
   calldataload      ;; [in]
   push BUFLEN       ;; [buflen, in]
   push 1            ;; [1, buflen, in]
-  number            ;; [number, 1, buflen, in]
+  %arb_block_num    ;; [number, 1, buflen, in]
   sub               ;; [number-1, buflen, in]
   mod               ;; [number-1 % buflen, in]
   sstore
