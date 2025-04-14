@@ -26,6 +26,11 @@
 ;; pushes the result onto the stack
 ;; we can use memory however we like, because the "set" path doesn't use memory
 #define %arb_block_num() {
+  ;; store the function selector
+  push 0xa3b1b31d ;; [selector]
+  push0           ;; [0, selector]
+  mstore          ;; []
+
   ;; stack input to staticcall
   ;; gas
   ;; address
@@ -44,13 +49,8 @@
   push 28         ;; [argsOffset, argsSize, retOffset, retSize]
   ;; address (ArbSys)
   push 100        ;; [ArbSys, argsOffset, argsSize, retOffset, retSize]
-  ;; gas, this is more than enough
-  push 5000       ;; [gas, ArbSys, argsOffset, argsSize, retOffset, retSize]
-
-  ;; store the function selector
-  push 0xa3b1b31d ;; [selector, gas, ArbSys, argsOffset, argsSize, retOffset, retSize]
-  push0           ;; [0, selector, gas, ArbSys, argsOffset, argsSize, retOffset, retSize]
-  mstore          ;; [gas, ArbSys, argsOffset, argsSize, retOffset, retSize]
+  ;; gas, forward everything left
+  gas             ;; [gas, ArbSys, argsOffset, argsSize, retOffset, retSize]
 
   ;; perform the call
   staticcall      ;; [success]
