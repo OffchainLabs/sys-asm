@@ -113,6 +113,14 @@ contract ContractTest is Test {
         assertEq(got, hash);
     }
 
+    // testCannotUpdate verifies only sysaddr can update the hash.
+    function testCannotUpdate(address sender) public {
+        vm.assume(sender != sysaddr);
+        vm.prank(sender);
+        (bool ret, ) = addr.call(bytes.concat(hash));
+        assertFalse(ret);
+    }
+
     // testRingBuffers verifies the integrity of the ring buffer is maintained
     // as the write indexes loop back to the start and begin overwriting
     // values.
