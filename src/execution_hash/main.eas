@@ -89,19 +89,20 @@
   ;; minus 1.
   push 0            ;; [0]
   calldataload      ;; [input]
-  push 1            ;; [1, input]
-  %arb_block_num    ;; [number, 1, input]
-  sub               ;; [number-1, input]              
-  dup2              ;; [input, number-1, input]
-  gt                ;; [input > number-1, input]
-  jumpi @throw      ;; [input]
+  %arb_block_num    ;; [number, input]
+  push 1            ;; [1, number, input]
+  dup2              ;; [number, 1, number, input]
+  sub               ;; [number-1, number, input]
+  dup3              ;; [input, number-1, number, input]
+  gt                ;; [input > number-1, number, input]
+  jumpi @throw      ;; [number, input]
 
   ;; Check if the input is requesting a block hash before the earliest available
   ;; hash currently. Since we've verified that input <= number - 1, we know
   ;; there will be no overflow during the subtraction of number - input.
-  push BUFLEN       ;; [buflen, input]
-  dup2              ;; [input, buflen, input]
-  %arb_block_num    ;; [number, input, buflen, input]
+  dup2              ;; [input, number, input]
+  push BUFLEN       ;; [buflen, input, number, input]
+  swap2             ;; [number, input, buflen, input]
   sub               ;; [number - input, buflen, input]
   gt                ;; [number - input > buflen, input]
   jumpi @throw      ;; [input]
