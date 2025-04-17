@@ -87,37 +87,38 @@
 
   ;; Check if input is requesting a block hash greater than current block number
   ;; minus 1.
-  push 0            ;; [0]
-  calldataload      ;; [input]
-  push 1            ;; [1, input]
-  %arb_block_num    ;; [number, 1, input]
-  sub               ;; [number-1, input]              
-  dup2              ;; [input, number-1, input]
-  gt                ;; [input > number-1, input]
-  jumpi @throw      ;; [input]
+  %arb_block_num    ;; [number]
+  push 0            ;; [0, number]
+  calldataload      ;; [input, number]
+  push 1            ;; [1, input, number]
+  dup3              ;; [number, 1, input, number]
+  sub               ;; [number-1, input, number]              
+  dup2              ;; [input, number-1, input, number]
+  gt                ;; [input > number-1, input, number]
+  jumpi @throw      ;; [input, number]
 
   ;; Check if the input is requesting a block hash before the earliest available
   ;; hash currently. Since we've verified that input <= number - 1, we know
   ;; there will be no overflow during the subtraction of number - input.
-  push BUFLEN       ;; [buflen, input]
-  dup2              ;; [input, buflen, input]
-  %arb_block_num    ;; [number, input, buflen, input]
-  sub               ;; [number - input, buflen, input]
-  gt                ;; [number - input > buflen, input]
-  jumpi @throw      ;; [input]
+  push BUFLEN       ;; [buflen, input, number]
+  dup2              ;; [input, buflen, input, number]
+  dup4              ;; [number, input, buflen, input, number]
+  sub               ;; [number - input, buflen, input, number]
+  gt                ;; [number - input > buflen, input, number]
+  jumpi @throw      ;; [input, number]
 
   ;; Load the hash.
-  push BUFLEN       ;; [buflen, input]
-  swap1             ;; [input, buflen]
-  mod               ;; [input % buflen]
-  sload             ;; [hash]
+  push BUFLEN       ;; [buflen, input, number]
+  swap1             ;; [input, buflen, number]
+  mod               ;; [input % buflen, number]
+  sload             ;; [hash, number]
 
   ;; Load into memory and return.
-  push 0            ;; [0, hash]
-  mstore            ;; []
-  push 32           ;; [32]
-  push 0            ;; [0, 32]
-  return            ;; []
+  push 0            ;; [0, hash, number]
+  mstore            ;; [number]
+  push 32           ;; [32, number]
+  push 0            ;; [0, 32, number]
+  return            ;; [number]
 
 throw:
   ;; Reverts current execution with no return data.
