@@ -24,7 +24,8 @@
 ;; call ArbSys::arbBlockNumber()
 ;; takes 0 stack arguments
 ;; pushes the result onto the stack
-;; we can use memory however we like, because the "set" path doesn't use memory
+;; we can use memory however we like, 
+;; because the "set" path doesn't use memory and the "get" path only mstores at very the end
 #define %arb_block_num() {
   ;; store the function selector
   push 0xa3b1b31d ;; [selector]
